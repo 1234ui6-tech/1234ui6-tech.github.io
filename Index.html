@@ -1,0 +1,3026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 / 注册</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --text: #202124;
+    --gray: #5f6368;
+    --border: #dadce0;
+    --bg: #f8fafd;
+}
+
+body {
+    min-height: 100vh;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(66,133,244,.15), transparent 30%),
+        radial-gradient(circle at 85% 80%, rgba(52,168,83,.13), transparent 30%),
+        linear-gradient(135deg, #f8fbff, #eef3f8);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* =========================
+   人机验证
+========================= */
+
+.captcha-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 25, 30, .35);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.captcha-box {
+    width: min(420px, 100%);
+    background: rgba(255,255,255,.82);
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: 28px;
+    padding: 32px;
+    box-shadow:
+        0 25px 80px rgba(0,0,0,.18),
+        inset 0 1px rgba(255,255,255,.9);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    text-align: center;
+}
+
+.captcha-box h2 {
+    font-size: 25px;
+    margin-bottom: 8px;
+}
+
+.captcha-box p {
+    color: var(--gray);
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+.captcha-image {
+    height: 90px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #f0f3f7 0,
+            #f0f3f7 3px,
+            #e3e7ed 3px,
+            #e3e7ed 6px
+        );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.captcha-text {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 9px;
+    color: #30343b;
+    user-select: none;
+    transform: rotate(-2deg);
+}
+
+.captcha-input {
+    width: 100%;
+    height: 52px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 15px;
+    font-size: 16px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 4px;
+    transition: .2s;
+}
+
+.captcha-input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(26,115,232,.12);
+}
+
+.captcha-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.captcha-actions button {
+    flex: 1;
+    height: 48px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.refresh-btn {
+    background: #f1f3f4;
+    color: #3c4043;
+}
+
+.verify-btn {
+    background: var(--blue);
+    color: white;
+}
+
+.captcha-error {
+    color: #d93025;
+    font-size: 13px;
+    margin-top: 12px;
+    min-height: 18px;
+}
+
+/* =========================
+   主卡片
+========================= */
+
+.container {
+    width: min(460px, 100%);
+}
+
+.logo {
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285f4, #1a73e8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 23px;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(26,115,232,.25);
+}
+
+.card {
+    background: rgba(255,255,255,.72);
+    border: 1px solid rgba(255,255,255,.85);
+    border-radius: 30px;
+    padding: 32px;
+    box-shadow:
+        0 20px 70px rgba(30,50,80,.12),
+        inset 0 1px rgba(255,255,255,.9);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+}
+
+.title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 650;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--gray);
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* =========================
+   登录注册滑动
+========================= */
+
+.switch-wrapper {
+    position: relative;
+    display: flex;
+    height: 52px;
+    background: rgba(241,243,244,.8);
+    border-radius: 16px;
+    padding: 4px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.switch-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: 44px;
+    border-radius: 13px;
+    background: rgba(255,255,255,.95);
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.10),
+        inset 0 1px rgba(255,255,255,.9);
+    transition: transform .35s cubic-bezier(.2,.8,.2,1);
+}
+
+.switch-slider.register {
+    transform: translateX(100%);
+}
+
+.switch-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    cursor: pointer;
+    color: #5f6368;
+    font-weight: 600;
+}
+
+/* =========================
+   表单
+========================= */
+
+.form {
+    display: none;
+    animation: fadeIn .3s ease;
+}
+
+.form.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #3c4043;
+}
+
+input,
+select {
+    width: 100%;
+    height: 52px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.72);
+    padding: 0 15px;
+    outline: none;
+    font-size: 15px;
+    color: var(--text);
+    transition: .2s;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(26,115,232,.10);
+    background: white;
+}
+
+.method-switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.method-btn {
+    flex: 1;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,.65);
+    cursor: pointer;
+    color: var(--gray);
+    font-weight: 600;
+}
+
+.method-btn.active {
+    background: #e8f0fe;
+    color: var(--blue);
+    border-color: #c2d7ff;
+}
+
+/* 手机号 */
+
+.phone-row {
+    display: flex;
+    gap: 8px;
+}
+
+.country {
+    width: 42%;
+    flex-shrink: 0;
+}
+
+.phone {
+    width: 58%;
+}
+
+/* 验证码 */
+
+.code-row {
+    display: flex;
+    gap: 8px;
+}
+
+.code-row input {
+    flex: 1;
+}
+
+.code-btn {
+    width: 125px;
+    border: none;
+    border-radius: 14px;
+    background: #e8f0fe;
+    color: var(--blue);
+    font-weight: 650;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.code-btn:hover {
+    background: #d9e7fd;
+}
+
+.code-btn:disabled {
+    background: #f1f3f4;
+    color: #9aa0a6;
+    cursor: not-allowed;
+}
+
+/* 密码提示 */
+
+.password-hint {
+    font-size: 12px;
+    color: #70757a;
+    margin-top: 7px;
+}
+
+.validation {
+    font-size: 12px;
+    margin-top: 6px;
+    min-height: 16px;
+}
+
+.validation.error {
+    color: #d93025;
+}
+
+.validation.success {
+    color: #188038;
+}
+
+/* 主按钮 */
+
+.submit-btn {
+    width: 100%;
+    height: 53px;
+    border: none;
+    border-radius: 15px;
+    background: var(--blue);
+    color: white;
+    font-size: 16px;
+    font-weight: 650;
+    cursor: pointer;
+    margin-top: 5px;
+    box-shadow: 0 8px 20px rgba(26,115,232,.22);
+    transition: .2s;
+}
+
+.submit-btn:hover {
+    background: var(--blue-dark);
+    transform: translateY(-1px);
+}
+
+.footer {
+    text-align: center;
+    color: #70757a;
+    font-size: 12px;
+    margin-top: 22px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.message {
+    margin-top: 14px;
+    padding: 11px;
+    border-radius: 12px;
+    font-size: 13px;
+    text-align: center;
+    display: none;
+}
+
+.message.success {
+    display: block;
+    color: #137333;
+    background: #e6f4ea;
+}
+
+.message.error {
+    display: block;
+    color: #c5221f;
+    background: #fce8e6;
+}
+
+@media(max-width:480px) {
+    body {
+        padding: 12px;
+    }
+
+    .card {
+        padding: 23px;
+        border-radius: 25px;
+    }
+
+    .title {
+        font-size: 25px;
+    }
+
+    .captcha-box {
+        padding: 25px;
+    }
+
+    .country {
+        width: 44%;
+    }
+
+    .phone {
+        width: 56%;
+    }
+
+    .code-btn {
+        width: 110px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     人机验证
+========================= -->
+
+<div class="captcha-overlay" id="captchaOverlay">
+
+    <div class="captcha-box">
+
+        <h2>验证你的身份</h2>
+
+        <p>
+            为了保护账号安全，请输入下方显示的验证码
+        </p>
+
+        <div class="captcha-image">
+            <span class="captcha-text" id="captchaText"></span>
+        </div>
+
+        <input
+            id="captchaInput"
+            class="captcha-input"
+            maxlength="6"
+            autocomplete="off"
+            placeholder="输入6位数字验证码"
+        >
+
+        <div class="captcha-actions">
+            <button
+                class="refresh-btn"
+                onclick="generateCaptcha()">
+                换一个
+            </button>
+
+            <button
+                class="verify-btn"
+                onclick="verifyCaptcha()">
+                验证
+            </button>
+        </div>
+
+        <div
+            class="captcha-error"
+            id="captchaError">
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     主页面
+========================= -->
+
+<div class="container">
+
+    <div class="logo">G</div>
+
+    <div class="card">
+
+        <h1 class="title" id="pageTitle">
+            登录
+        </h1>
+
+        <p class="subtitle">
+            使用你的账号继续
+        </p>
+
+        <!-- 登录 / 注册 -->
+
+        <div class="switch-wrapper">
+
+            <div
+                class="switch-slider"
+                id="switchSlider">
+            </div>
+
+            <button
+                class="switch-btn"
+                onclick="switchPage('login')">
+                登录
+            </button>
+
+            <button
+                class="switch-btn"
+                onclick="switchPage('register')">
+                注册
+            </button>
+
+        </div>
+
+
+        <!-- =========================
+             登录
+        ========================= -->
+
+        <form
+            class="form active"
+            id="loginForm"
+            onsubmit="return submitLogin(event)">
+
+            <div class="method-switch">
+
+                <button
+                    type="button"
+                    class="method-btn active"
+                    id="loginEmailBtn"
+                    onclick="switchMethod('login','email')">
+                    邮箱
+                </button>
+
+                <button
+                    type="button"
+                    class="method-btn"
+                    id="loginPhoneBtn"
+                    onclick="switchMethod('login','phone')">
+                    手机号
+                </button>
+
+            </div>
+
+            <!-- 登录邮箱 -->
+
+            <div
+                class="field"
+                id="loginEmailField">
+
+                <label>邮箱</label>
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="name@example.com"
+                    autocomplete="email">
+
+            </div>
+
+            <!-- 登录手机号 -->
+
+            <div
+                class="field hidden"
+                id="loginPhoneField">
+
+                <label>手机号</label>
+
+                <div class="phone-row">
+
+                    <select
+                        class="country"
+                        id="loginCountry">
+
+                        <option value="+86">🇨🇳 +86</option>
+                        <option value="+81">🇯🇵 +81</option>
+                        <option value="+82">🇰🇷 +82</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+65">🇸🇬 +65</option>
+                        <option value="+852">🇭🇰 +852</option>
+                        <option value="+886">🇹🇼 +886</option>
+
+                    </select>
+
+                    <input
+                        class="phone"
+                        id="loginPhone"
+                        type="tel"
+                        placeholder="请输入手机号"
+                        inputmode="numeric">
+
+                </div>
+
+                <div
+                    class="validation"
+                    id="loginPhoneValidation">
+                </div>
+
+            </div>
+
+            <!-- 密码 -->
+
+            <div class="field">
+
+                <label>密码</label>
+
+                <input
+                    id="loginPassword"
+                    type="password"
+                    maxlength="16"
+                    placeholder="请输入16位密码"
+                    autocomplete="current-password">
+
+            </div>
+
+            <!-- 验证码 -->
+
+            <div class="field">
+
+                <label>验证码</label>
+
+                <div class="code-row">
+
+                    <input
+                        id="loginCode"
+                        type="text"
+                        maxlength="6"
+                        placeholder="6位验证码"
+                        inputmode="numeric">
+
+                    <button
+                        type="button"
+                        class="code-btn"
+                        id="loginCodeBtn"
+                        onclick="sendCode('login')">
+                        获取验证码
+                    </button>
+
+                </div>
+
+            </div>
+
+            <button
+                type="submit"
+                class="submit-btn">
+                登录
+            </button>
+
+            <div
+                class="message"
+                id="loginMessage">
+            </div>
+
+        </form>
+
+
+        <!-- =========================
+             注册
+        ========================= -->
+
+        <form
+            class="form"
+            id="registerForm"
+            onsubmit="return submitRegister(event)">
+
+            <div class="method-switch">
+
+                <button
+                    type="button"
+                    class="method-btn active"
+                    id="registerEmailBtn"
+                    onclick="switchMethod('register','email')">
+                    邮箱
+                </button>
+
+                <button
+                    type="button"
+                    class="method-btn"
+                    id="registerPhoneBtn"
+                    onclick="switchMethod('register','phone')">
+                    手机号
+                </button>
+
+            </div>
+
+
+            <!-- 注册邮箱 -->
+
+            <div
+                class="field"
+                id="registerEmailField">
+
+                <label>邮箱</label>
+
+                <input
+                    type="email"
+                    id="registerEmail"
+                    placeholder="name@example.com"
+                    autocomplete="email">
+
+            </div>
+
+
+            <!-- 注册手机号 -->
+
+            <div
+                class="field hidden"
+                id="registerPhoneField">
+
+                <label>手机号</label>
+
+                <div class="phone-row">
+
+                    <select
+                        class="country"
+                        id="registerCountry">
+
+                        <option value="+86">🇨🇳 +86</option>
+                        <option value="+81">🇯🇵 +81</option>
+                        <option value="+82">🇰🇷 +82</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+65">🇸🇬 +65</option>
+                        <option value="+852">🇭🇰 +852</option>
+                        <option value="+886">🇹🇼 +886</option>
+
+                    </select>
+
+                    <input
+                        class="phone"
+                        id="registerPhone"
+                        type="tel"
+                        placeholder="请输入手机号"
+                        inputmode="numeric">
+
+                </div>
+
+                <div
+                    class="validation"
+                    id="registerPhoneValidation">
+                </div>
+
+            </div>
+
+
+            <!-- 注册密码 -->
+
+            <div class="field">
+
+                <label>设置密码</label>
+
+                <input
+                    id="registerPassword"
+                    type="password"
+                    maxlength="16"
+                    placeholder="16位字母+数字"
+                    autocomplete="new-password">
+
+                <div class="password-hint">
+                    必须正好16位，并且同时包含字母和数字
+                </div>
+
+                <div
+                    class="validation"
+                    id="passwordValidation">
+                </div>
+
+            </div>
+
+
+            <!-- 注册验证码 -->
+
+            <div class="field">
+
+                <label>验证码</label>
+
+                <div class="code-row">
+
+                    <input
+                        id="registerCode"
+                        type="text"
+                        maxlength="6"
+                        placeholder="6位验证码"
+                        inputmode="numeric">
+
+                    <button
+                        type="button"
+                        class="code-btn"
+                        id="registerCodeBtn"
+                        onclick="sendCode('register')">
+                        获取验证码
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="submit-btn">
+                创建账号
+            </button>
+
+            <div
+                class="message"
+                id="registerMessage">
+            </div>
+
+        </form>
+
+
+        <div class="footer">
+            继续使用即表示你同意相关服务条款和隐私政策
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   人机验证码
+===================================================== */
+
+let captchaCode = "";
+
+function generateCaptcha() {
+
+    captchaCode = String(
+        Math.floor(100000 + Math.random() * 900000)
+    );
+
+    document.getElementById("captchaText").textContent =
+        captchaCode;
+
+    document.getElementById("captchaInput").value = "";
+
+    document.getElementById("captchaError").textContent = "";
+}
+
+function verifyCaptcha() {
+
+    const input =
+        document.getElementById("captchaInput")
+        .value
+        .trim();
+
+    if (/^\d{6}$/.test(input)) {
+
+        document.getElementById("captchaOverlay")
+            .classList.add("hidden");
+
+    } else {
+
+        document.getElementById("captchaError")
+            .textContent =
+            "验证码错误，请重新输入";
+
+        generateCaptcha();
+    }
+}
+
+generateCaptcha();
+
+
+/* =====================================================
+   登录 / 注册切换
+===================================================== */
+
+function switchPage(page) {
+
+    const loginForm =
+        document.getElementById("loginForm");
+
+    const registerForm =
+        document.getElementById("registerForm");
+
+    const slider =
+        document.getElementById("switchSlider");
+
+    const title =
+        document.getElementById("pageTitle");
+
+    if (page === "login") {
+
+        loginForm.classList.add("active");
+        registerForm.classList.remove("active");
+
+        slider.classList.remove("register");
+
+        title.textContent = "登录";
+
+    } else {
+
+        registerForm.classList.add("active");
+        loginForm.classList.remove("active");
+
+        slider.classList.add("register");
+
+        title.textContent = "注册";
+    }
+}
+
+
+/* =====================================================
+   邮箱 / 手机号切换
+===================================================== */
+
+function switchMethod(type, method) {
+
+    const emailField =
+        document.getElementById(
+            type + "EmailField"
+        );
+
+    const phoneField =
+        document.getElementById(
+            type + "PhoneField"
+        );
+
+    const emailBtn =
+        document.getElementById(
+            type + "EmailBtn"
+        );
+
+    const phoneBtn =
+        document.getElementById(
+            type + "PhoneBtn"
+        );
+
+    if (method === "email") {
+
+        emailField.classList.remove("hidden");
+        phoneField.classList.add("hidden");
+
+        emailBtn.classList.add("active");
+        phoneBtn.classList.remove("active");
+
+    } else {
+
+        emailField.classList.add("hidden");
+        phoneField.classList.remove("hidden");
+
+        emailBtn.classList.remove("active");
+        phoneBtn.classList.add("active");
+    }
+}
+
+
+/* =====================================================
+   手机号验证
+===================================================== */
+
+/*
+    这里使用不同国家的基础号码长度规则。
+
+    注意：
+    真正生产环境建议后端使用 Google libphonenumber
+    或其他成熟手机号库再次验证。
+*/
+
+const phoneRules = {
+
+    // 中国大陆：11位手机号，以1开头，第二位3-9
+    "+86": { regex: /^1[3-9]\d{9}$/, digits: 11, label: "中国大陆" },
+
+    // 日本：常见移动号码 10-11 位（070/080/090）
+    "+81": { regex: /^(070|080|090)\d{8}$/, digits: 11, label: "日本" },
+
+    // 韩国：常见移动号码 10-11 位（01x）
+    "+82": { regex: /^01[016789]\d{7,8}$/, minDigits: 10, maxDigits: 11, label: "韩国" },
+
+    // 美国/加拿大 NANP：10位本地号码
+    "+1": { regex: /^[2-9]\d{9}$/, digits: 10, label: "美国/加拿大" },
+
+    // 英国：国际区号 +44 后常见移动号码 10位
+    "+44": { regex: /^7\d{9}$/, digits: 10, label: "英国" },
+
+    // 澳大利亚：移动号码 9位（区号 +61 后）
+    "+61": { regex: /^4\d{8}$/, digits: 9, label: "澳大利亚" },
+
+    // 新加坡：8位
+    "+65": { regex: /^[689]\d{7}$/, digits: 8, label: "新加坡" },
+
+    // 中国香港：8位
+    "+852": { regex: /^[5-9]\d{7}$/, digits: 8, label: "中国香港" },
+
+    // 中国台湾：9位移动号码
+    "+886": /^9\d{8}$/
+};
+
+function validatePhone(countryId, phoneId, validationId) {
+
+    const country =
+        document.getElementById(countryId).value;
+
+    const phone =
+        document.getElementById(phoneId)
+        .value
+        .replace(/\s/g, "");
+
+    const validation =
+        document.getElementById(validationId);
+
+    if (!phone) {
+
+        validation.textContent =
+            "请输入手机号";
+
+        validation.className =
+            "validation error";
+
+        return false;
+    }
+
+    const rule = phoneRules[country];
+    const regex = rule && (rule.regex || rule);
+    const expectedDigits = rule && rule.digits;
+    const minDigits = rule && rule.minDigits;
+    const maxDigits = rule && rule.maxDigits;
+
+    if (
+        !regex ||
+        !regex.test(phone) ||
+        (expectedDigits && phone.length !== expectedDigits) ||
+        (minDigits && phone.length < minDigits) ||
+        (maxDigits && phone.length > maxDigits)
+    ) {
+
+        validation.textContent =
+            expectedDigits
+                ? "请输入" + expectedDigits + "位手机号"
+                : "手机号格式不正确";
+
+        validation.className =
+            "validation error";
+
+        return false;
+    }
+
+    validation.textContent =
+        "手机号格式正确";
+
+    validation.className =
+        "validation success";
+
+    return true;
+}
+
+
+/* =====================================================
+   密码验证
+===================================================== */
+
+function validatePassword() {
+
+    const password =
+        document.getElementById("registerPassword")
+        .value;
+
+    const validation =
+        document.getElementById("passwordValidation");
+
+    /*
+        必须：
+        1. 16位
+        2. 至少一个字母
+        3. 至少一个数字
+    */
+
+    const valid =
+        /^[A-Za-z0-9]{16}$/.test(password) &&
+        /[A-Za-z]/.test(password) &&
+        /\d/.test(password);
+
+    if (!valid) {
+
+        validation.textContent =
+            "密码必须正好16位，并同时包含字母和数字";
+
+        validation.className =
+            "validation error";
+
+        return false;
+    }
+
+    validation.textContent =
+        "密码格式正确";
+
+    validation.className =
+        "validation success";
+
+    return true;
+}
+
+document
+    .getElementById("registerPassword")
+    .addEventListener(
+        "input",
+        validatePassword
+    );
+
+
+/* =====================================================
+   获取验证码
+===================================================== */
+
+const countdowns = {
+    login: 0,
+    register: 0
+};
+
+const verificationCodes = {
+    login: "",
+    register: ""
+};
+
+function getTarget(type) {
+
+    const form =
+        document.getElementById(
+            type + "Form"
+        );
+
+    const emailField =
+        document.getElementById(
+            type + "EmailField"
+        );
+
+    const isEmail =
+        !emailField.classList.contains("hidden");
+
+    if (isEmail) {
+
+        const email =
+            document.getElementById(
+                type + "Email"
+            ).value.trim();
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+            showMessage(
+                type,
+                "请输入正确的邮箱地址",
+                "error"
+            );
+
+            return null;
+        }
+
+        return email;
+
+    } else {
+
+        const valid = validatePhone(
+            type + "Country",
+            type + "Phone",
+            type + "PhoneValidation"
+        );
+
+        if (!valid) {
+
+            showMessage(
+                type,
+                "请先输入正确的手机号",
+                "error"
+            );
+
+            return null;
+        }
+
+        const country =
+            document.getElementById(
+                type + "Country"
+            ).value;
+
+        const phone =
+            document.getElementById(
+                type + "Phone"
+            ).value
+            .replace(/\s/g, "");
+
+        return country + phone;
+    }
+}
+
+function sendCode(type) {
+
+    if (countdowns[type] > 0) {
+        return;
+    }
+
+    const target = getTarget(type);
+
+    if (!target) {
+        return;
+    }
+
+    /*
+        生成演示验证码
+        生产环境必须由服务器生成并发送。
+    */
+
+    verificationCodes[type] =
+        String(
+            Math.floor(
+                100000 +
+                Math.random() * 900000
+            )
+        );
+
+    console.log(
+        "【演示】发送验证码到:",
+        target,
+        "验证码:",
+        verificationCodes[type]
+    );
+
+    showMessage(
+        type,
+        "验证码已发送（演示模式请查看控制台）",
+        "success"
+    );
+
+    countdowns[type] = 120;
+
+    const button =
+        document.getElementById(
+            type + "CodeBtn"
+        );
+
+    button.disabled = true;
+
+    button.textContent =
+        `重新获取 (${countdowns[type]}s)`;
+
+    const timer =
+        setInterval(() => {
+
+            countdowns[type]--;
+
+            button.textContent =
+                countdowns[type] > 0
+                ? `重新获取 (${countdowns[type]}s)`
+                : "获取验证码";
+
+            if (countdowns[type] <= 0) {
+
+                clearInterval(timer);
+
+                button.disabled = false;
+            }
+
+        }, 1000);
+}
+
+
+/* =====================================================
+   登录
+===================================================== */
+
+function submitLogin(event) {
+
+    event.preventDefault();
+
+    const emailField =
+        document.getElementById("loginEmailField");
+
+    const isEmail =
+        !emailField.classList.contains("hidden");
+
+    let targetValid = false;
+
+    if (isEmail) {
+
+        const email =
+            document.getElementById("loginEmail")
+            .value
+            .trim();
+
+        targetValid =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    } else {
+
+        targetValid = validatePhone(
+            "loginCountry",
+            "loginPhone",
+            "loginPhoneValidation"
+        );
+    }
+
+    const password =
+        document.getElementById("loginPassword")
+        .value;
+
+    const code =
+        document.getElementById("loginCode")
+        .value
+        .trim();
+
+    if (!targetValid) {
+
+        showMessage(
+            "login",
+            "请输入正确的邮箱或手机号",
+            "error"
+        );
+
+        return false;
+    }
+
+    if (!/^[A-Za-z0-9]{16}$/.test(password)) {
+
+        showMessage(
+            "login",
+            "密码必须是16位字母和数字",
+            "error"
+        );
+
+        return false;
+    }
+
+    if (code !== verificationCodes.login) {
+
+        showMessage(
+            "login",
+            "验证码错误",
+            "error"
+        );
+
+        return false;
+    }
+
+    // 只有用户手动点击“登录”按钮并通过校验后，才显示登录成功。
+    showLoginSuccessPopup();
+
+    return false;
+}
+
+
+/* =====================================================
+   注册
+===================================================== */
+
+function submitRegister(event) {
+
+    event.preventDefault();
+
+    const emailField =
+        document.getElementById("registerEmailField");
+
+    const isEmail =
+        !emailField.classList.contains("hidden");
+
+    let targetValid = false;
+
+    if (isEmail) {
+
+        const email =
+            document.getElementById("registerEmail")
+            .value
+            .trim();
+
+        targetValid =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    } else {
+
+        targetValid = validatePhone(
+            "registerCountry",
+            "registerPhone",
+            "registerPhoneValidation"
+        );
+    }
+
+    const passwordValid =
+        validatePassword();
+
+    const code =
+        document.getElementById("registerCode")
+        .value
+        .trim();
+
+    if (!targetValid) {
+
+        showMessage(
+            "register",
+            "请输入正确的邮箱或手机号",
+            "error"
+        );
+
+        return false;
+    }
+
+    if (!passwordValid) {
+
+        showMessage(
+            "register",
+            "密码格式不符合要求",
+            "error"
+        );
+
+        return false;
+    }
+
+    if (code !== verificationCodes.register) {
+
+        showMessage(
+            "register",
+            "验证码错误",
+            "error"
+        );
+
+        return false;
+    }
+
+    showMessage(
+        "register",
+        "注册验证成功！这是前端演示页面。",
+        "success"
+    );
+
+    return false;
+}
+
+
+/* =====================================================
+   消息提示
+===================================================== */
+
+function showMessage(type, text, status) {
+
+    const message =
+        document.getElementById(
+            type + "Message"
+        );
+
+    message.textContent = text;
+
+    message.className =
+        "message " + status;
+
+    setTimeout(() => {
+
+        message.className =
+            "message";
+
+    }, 4000);
+}
+
+
+/* =====================================================
+   手机号实时检测
+===================================================== */
+
+document
+    .getElementById("loginPhone")
+    .addEventListener("input", () => {
+
+        validatePhone(
+            "loginCountry",
+            "loginPhone",
+            "loginPhoneValidation"
+        );
+
+    });
+
+document
+    .getElementById("registerPhone")
+    .addEventListener("input", () => {
+
+        validatePhone(
+            "registerCountry",
+            "registerPhone",
+            "registerPhoneValidation"
+        );
+
+    });
+
+</script>
+
+
+<!-- =========================
+     新增功能：语言选择 + 密码UI开关
+     说明：以下内容全部为追加代码，不修改原有UI结构
+========================= -->
+
+<style id="added-features-style">
+/* 语言按钮：只新增，不影响原有卡片布局 */
+#addedLanguageWrap {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 10001;
+}
+
+#addedLanguageButton {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,.75);
+    border-radius: 13px;
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 6px 22px rgba(30,50,80,.12);
+    cursor: pointer;
+    font-size: 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#addedLanguageMenu {
+    display: none;
+    position: absolute;
+    top: 49px;
+    left: 0;
+    width: 170px;
+    padding: 7px;
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 16px;
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow: 0 15px 40px rgba(30,50,80,.16);
+}
+
+#addedLanguageMenu.show {
+    display: block;
+}
+
+#addedLanguageMenu button {
+    width: 100%;
+    height: 38px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    text-align: left;
+    padding: 0 11px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #202124;
+}
+
+#addedLanguageMenu button:hover {
+    background: #f1f3f4;
+}
+
+/* 密码显示/隐藏 UI 开关 */
+.added-password-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 8px;
+}
+
+.added-password-switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    flex: 0 0 38px;
+}
+
+.added-password-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.added-password-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #dadce0;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.added-password-slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: .2s;
+}
+
+.added-password-switch input:checked + .added-password-slider {
+    background: #1a73e8;
+}
+
+.added-password-switch input:checked + .added-password-slider::before {
+    transform: translateX(16px);
+}
+
+.added-password-label {
+    font-size: 12px;
+    color: #70757a;
+    cursor: pointer;
+}
+
+/* 阿拉伯语只在选中时开启RTL，不改其他语言布局 */
+html[dir="rtl"] #addedLanguageWrap {
+    left: auto;
+    right: 18px;
+}
+
+html[dir="rtl"] #addedLanguageMenu button {
+    text-align: right;
+}
+</style>
+
+<script id="added-features-script">
+(function () {
+    "use strict";
+
+    /* =========================
+       1. 新增语言菜单
+    ========================= */
+    const languageData = {
+        "zh-CN": {
+            name: "简体中文",
+            dir: "ltr",
+            titleLogin: "登录",
+            titleRegister: "注册",
+            subtitle: "使用你的账号继续",
+            login: "登录",
+            register: "注册",
+            email: "邮箱",
+            phone: "手机号",
+            password: "密码",
+            setPassword: "设置密码",
+            code: "验证码",
+            getCode: "获取验证码",
+            createAccount: "创建账号",
+            terms: "继续使用即表示你同意相关服务条款和隐私政策",
+            phonePlaceholder: "请输入手机号",
+            passwordPlaceholder: "请输入16位密码",
+            registerPasswordPlaceholder: "16位字母+数字",
+            codePlaceholder: "6位验证码",
+            passwordHint: "必须正好16位，并且同时包含字母和数字",
+            showPassword: "显示密码",
+            hidePassword: "隐藏密码",
+            captchaTitle: "验证你的身份",
+            captchaDesc: "为了保护账号安全，请输入下方显示的验证码",
+            captchaPlaceholder: "输入6位数字验证码",
+            captchaRefresh: "换一个",
+            captchaVerify: "验证"
+        },
+        "zh-TW": {
+            name: "繁體中文",
+            dir: "ltr",
+            titleLogin: "登入",
+            titleRegister: "註冊",
+            subtitle: "使用你的帳號繼續",
+            login: "登入",
+            register: "註冊",
+            email: "電子郵件",
+            phone: "手機號碼",
+            password: "密碼",
+            setPassword: "設定密碼",
+            code: "驗證碼",
+            getCode: "取得驗證碼",
+            createAccount: "建立帳號",
+            terms: "繼續使用即表示你同意相關服務條款和隱私權政策",
+            phonePlaceholder: "請輸入手機號碼",
+            passwordPlaceholder: "請輸入16位密碼",
+            registerPasswordPlaceholder: "16位字母+數字",
+            codePlaceholder: "6位驗證碼",
+            passwordHint: "必須正好16位，並且同時包含字母和數字",
+            showPassword: "顯示密碼",
+            hidePassword: "隱藏密碼",
+            captchaTitle: "驗證你的身分",
+            captchaDesc: "為了保護帳號安全，請輸入下方顯示的驗證碼",
+            captchaPlaceholder: "輸入6位驗證碼",
+            captchaRefresh: "換一個",
+            captchaVerify: "驗證"
+        },
+        "en": {
+            name: "English",
+            dir: "ltr",
+            titleLogin: "Sign in",
+            titleRegister: "Create account",
+            subtitle: "Continue with your account",
+            login: "Sign in",
+            register: "Sign up",
+            email: "Email",
+            phone: "Phone",
+            password: "Password",
+            setPassword: "Set password",
+            code: "Verification code",
+            getCode: "Get code",
+            createAccount: "Create account",
+            terms: "By continuing, you agree to the applicable Terms of Service and Privacy Policy",
+            phonePlaceholder: "Enter phone number",
+            passwordPlaceholder: "Enter 16-character password",
+            registerPasswordPlaceholder: "16 letters + numbers",
+            codePlaceholder: "6-digit code",
+            passwordHint: "Must be exactly 16 characters and contain both letters and numbers",
+            showPassword: "Show password",
+            hidePassword: "Hide password",
+            captchaTitle: "Verify your identity",
+            captchaDesc: "To protect your account, enter the verification code shown below",
+            captchaPlaceholder: "Enter 6-digit code",
+            captchaRefresh: "Refresh",
+            captchaVerify: "Verify"
+        },
+        "ru": {
+            name: "Русский",
+            dir: "ltr",
+            titleLogin: "Войти",
+            titleRegister: "Регистрация",
+            subtitle: "Продолжите с помощью аккаунта",
+            login: "Войти",
+            register: "Регистрация",
+            email: "Эл. почта",
+            phone: "Телефон",
+            password: "Пароль",
+            setPassword: "Создать пароль",
+            code: "Код подтверждения",
+            getCode: "Получить код",
+            createAccount: "Создать аккаунт",
+            terms: "Продолжая, вы соглашаетесь с условиями обслуживания и политикой конфиденциальности",
+            phonePlaceholder: "Введите номер телефона",
+            passwordPlaceholder: "Введите пароль из 16 символов",
+            registerPasswordPlaceholder: "16 букв + цифры",
+            codePlaceholder: "6-значный код",
+            passwordHint: "Ровно 16 символов, включая буквы и цифры",
+            showPassword: "Показать пароль",
+            hidePassword: "Скрыть пароль",
+            captchaTitle: "Подтвердите личность",
+            captchaDesc: "Для защиты аккаунта введите код с изображения ниже",
+            captchaPlaceholder: "Введите код из 6 символов",
+            captchaRefresh: "Другой код",
+            captchaVerify: "Проверить"
+        },
+        "ar": {
+            name: "العربية",
+            dir: "rtl",
+            titleLogin: "تسجيل الدخول",
+            titleRegister: "إنشاء حساب",
+            subtitle: "المتابعة باستخدام حسابك",
+            login: "تسجيل الدخول",
+            register: "التسجيل",
+            email: "البريد الإلكتروني",
+            phone: "رقم الهاتف",
+            password: "كلمة المرور",
+            setPassword: "تعيين كلمة المرور",
+            code: "رمز التحقق",
+            getCode: "الحصول على الرمز",
+            createAccount: "إنشاء حساب",
+            terms: "بالمتابعة، فإنك توافق على شروط الخدمة وسياسة الخصوصية",
+            phonePlaceholder: "أدخل رقم الهاتف",
+            passwordPlaceholder: "أدخل كلمة مرور من 16 حرفًا",
+            registerPasswordPlaceholder: "16 حرفًا وأرقامًا",
+            codePlaceholder: "رمز من 6 أرقام",
+            passwordHint: "يجب أن تكون 16 حرفًا بالضبط وتتضمن أحرفًا وأرقامًا",
+            showPassword: "إظهار كلمة المرور",
+            hidePassword: "إخفاء كلمة المرور",
+            captchaTitle: "تحقق من هويتك",
+            captchaDesc: "لحماية حسابك، أدخل رمز التحقق الظاهر أدناه",
+            captchaPlaceholder: "أدخل رمز التحقق المكون من 6 أحرف",
+            captchaRefresh: "رمز آخر",
+            captchaVerify: "تحقق"
+        },
+        "fr": {
+            name: "Français",
+            dir: "ltr",
+            titleLogin: "Connexion",
+            titleRegister: "Inscription",
+            subtitle: "Continuez avec votre compte",
+            login: "Connexion",
+            register: "Inscription",
+            email: "E-mail",
+            phone: "Téléphone",
+            password: "Mot de passe",
+            setPassword: "Créer un mot de passe",
+            code: "Code de vérification",
+            getCode: "Obtenir le code",
+            createAccount: "Créer un compte",
+            terms: "En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialité",
+            phonePlaceholder: "Entrez votre numéro",
+            passwordPlaceholder: "Entrez un mot de passe de 16 caractères",
+            registerPasswordPlaceholder: "16 lettres + chiffres",
+            codePlaceholder: "Code à 6 chiffres",
+            passwordHint: "Doit contenir exactement 16 caractères, avec des lettres et des chiffres",
+            showPassword: "Afficher le mot de passe",
+            hidePassword: "Masquer le mot de passe",
+            captchaTitle: "Vérifiez votre identité",
+            captchaDesc: "Pour protéger votre compte, saisissez le code affiché ci-dessous",
+            captchaPlaceholder: "Entrez le code à 6 caractères",
+            captchaRefresh: "Nouveau code",
+            captchaVerify: "Vérifier"
+        }
+    };
+
+    const languages = ["zh-CN", "zh-TW", "en", "ru", "ar", "fr"];
+
+    function addLanguageUI() {
+        if (document.getElementById("addedLanguageWrap")) return;
+
+        const wrap = document.createElement("div");
+        wrap.id = "addedLanguageWrap";
+
+        const button = document.createElement("button");
+        button.id = "addedLanguageButton";
+        button.type = "button";
+        button.title = "Language";
+        button.setAttribute("aria-label", "Language");
+        button.textContent = "🌐";
+
+        const menu = document.createElement("div");
+        menu.id = "addedLanguageMenu";
+
+        languages.forEach(lang => {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.textContent = languageData[lang].name;
+            item.dataset.lang = lang;
+            item.addEventListener("click", function () {
+                changeAddedLanguage(lang);
+                menu.classList.remove("show");
+            });
+            menu.appendChild(item);
+        });
+
+        button.addEventListener("click", function (event) {
+            event.stopPropagation();
+            menu.classList.toggle("show");
+        });
+
+        wrap.appendChild(button);
+        wrap.appendChild(menu);
+        document.body.appendChild(wrap);
+
+        document.addEventListener("click", function (event) {
+            if (!wrap.contains(event.target)) {
+                menu.classList.remove("show");
+            }
+        });
+    }
+
+    function setText(selector, value) {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = value;
+    }
+
+    function setPlaceholder(selector, value) {
+        const el = document.querySelector(selector);
+        if (el) el.placeholder = value;
+    }
+
+    function changeAddedLanguage(lang) {
+        const t = languageData[lang];
+        if (!t) return;
+
+        document.documentElement.lang = lang;
+        document.documentElement.dir = t.dir;
+
+        const title = document.getElementById("pageTitle");
+        const registerActive = document.getElementById("registerForm").classList.contains("active");
+
+        if (title) title.textContent = registerActive ? t.titleRegister : t.titleLogin;
+
+        const subtitle = document.querySelector(".subtitle");
+        if (subtitle) subtitle.textContent = t.subtitle;
+
+        const switchBtns = document.querySelectorAll(".switch-btn");
+        if (switchBtns[0]) switchBtns[0].textContent = t.login;
+        if (switchBtns[1]) switchBtns[1].textContent = t.register;
+
+        setText("#loginEmailBtn", t.email);
+        setText("#loginPhoneBtn", t.phone);
+        setText("#registerEmailBtn", t.email);
+        setText("#registerPhoneBtn", t.phone);
+
+        const labels = document.querySelectorAll(".form label");
+        labels.forEach(label => {
+            const txt = label.textContent.trim();
+            if (txt === "邮箱" || txt === "電子郵件" || txt === "E-mail" || txt === "Эл. почта" || txt === "البريد الإلكتروني" || txt === "邮箱") label.textContent = t.email;
+            else if (txt === "手机号" || txt === "手機號碼" || txt === "Phone" || txt === "Телефон" || txt === "رقم الهاتف" || txt === "Téléphone") label.textContent = t.phone;
+            else if (txt === "密码" || txt === "Password" || txt === "Пароль" || txt === "كلمة المرور" || txt === "Mot de passe") label.textContent = t.password;
+            else if (txt === "设置密码" || txt === "設定密碼" || txt === "Set password" || txt === "Crear contraseña" || txt === "Создать пароль" || txt === "تعيين كلمة المرور" || txt === "Créer un mot de passe") label.textContent = t.setPassword;
+            else if (txt === "验证码" || txt === "驗證碼" || txt === "Verification code" || txt === "Код подтверждения" || txt === "رمز التحقق" || txt === "Code de vérification") label.textContent = t.code;
+        });
+
+        document.querySelectorAll(".code-btn").forEach(btn => {
+            if (!btn.disabled) btn.textContent = t.getCode;
+        });
+
+        document.querySelectorAll(".submit-btn")[0].textContent = t.login;
+        document.querySelectorAll(".submit-btn")[1].textContent = t.createAccount;
+
+        setPlaceholder("#loginPhone", t.phonePlaceholder);
+        setPlaceholder("#registerPhone", t.phonePlaceholder);
+        setPlaceholder("#loginPassword", t.passwordPlaceholder);
+        setPlaceholder("#registerPassword", t.registerPasswordPlaceholder);
+        setPlaceholder("#loginCode", t.codePlaceholder);
+        setPlaceholder("#registerCode", t.codePlaceholder);
+
+        const hints = document.querySelectorAll(".password-hint");
+        hints.forEach(h => h.textContent = t.passwordHint);
+
+        const footer = document.querySelector(".footer");
+        if (footer) footer.textContent = t.terms;
+
+        const captchaTitle = document.querySelector(".captcha-box h2");
+        if (captchaTitle) captchaTitle.textContent = t.captchaTitle;
+
+        const captchaDesc = document.querySelector(".captcha-box p");
+        if (captchaDesc) captchaDesc.textContent = t.captchaDesc;
+
+        setPlaceholder("#captchaInput", t.captchaPlaceholder);
+
+        const captchaButtons = document.querySelectorAll(".captcha-actions button");
+        if (captchaButtons[0]) captchaButtons[0].textContent = t.captchaRefresh;
+        if (captchaButtons[1]) captchaButtons[1].textContent = t.captchaVerify;
+
+        document.querySelectorAll(".added-password-label").forEach(label => {
+            const inputId = label.dataset.for;
+            const input = document.getElementById(inputId);
+            label.textContent = input && input.type === "text" ? t.hidePassword : t.showPassword;
+        });
+
+        localStorage.setItem("addedLanguage", lang);
+    }
+
+    /* =========================
+       2. 新增密码UI开关
+       不使用眼睛图标
+    ========================= */
+    function addPasswordSwitch(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input || input.parentElement.querySelector(".added-password-row")) return;
+
+        const row = document.createElement("div");
+        row.className = "added-password-row";
+
+        const labelWrap = document.createElement("label");
+        labelWrap.className = "added-password-switch";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.setAttribute("aria-label", "Show password");
+
+        const slider = document.createElement("span");
+        slider.className = "added-password-slider";
+
+        labelWrap.appendChild(checkbox);
+        labelWrap.appendChild(slider);
+
+        const text = document.createElement("span");
+        text.className = "added-password-label";
+        text.dataset.for = inputId;
+        text.textContent = "显示密码";
+
+        row.appendChild(labelWrap);
+        row.appendChild(text);
+
+        input.parentElement.appendChild(row);
+
+        checkbox.addEventListener("change", function () {
+            input.type = checkbox.checked ? "text" : "password";
+
+            const lang = localStorage.getItem("addedLanguage") || "zh-CN";
+            const t = languageData[lang];
+            text.textContent = checkbox.checked ? t.hidePassword : t.showPassword;
+        });
+    }
+
+    function initAddedFeatures() {
+        addLanguageUI();
+        addPasswordSwitch("loginPassword");
+        addPasswordSwitch("registerPassword");
+
+        const saved = localStorage.getItem("addedLanguage");
+        if (saved && languageData[saved]) {
+            changeAddedLanguage(saved);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAddedFeatures);
+    } else {
+        initAddedFeatures();
+    }
+})();
+</script>
+
+
+<!-- =========================
+     追加功能 V2：
+     1. 用户使用手册弹窗
+     2. 登录/注册界面下方使用手册入口
+     3. 阿拉伯语替换为德语
+     ========================= -->
+
+<style id="added-manual-style">
+#addedManualTop {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 10001;
+    height: 42px;
+    padding: 0 15px;
+    border: 1px solid rgba(255,255,255,.75);
+    border-radius: 13px;
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 6px 22px rgba(30,50,80,.12);
+    cursor: pointer;
+    font-size: 13px;
+    color: #202124;
+}
+
+#addedManualBottom {
+    margin: 14px auto 0;
+    display: block;
+    border: 0;
+    background: transparent;
+    color: #1a73e8;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 10px;
+}
+
+#addedManualBottom:hover {
+    text-decoration: underline;
+}
+
+#addedManualOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(20,30,45,.32);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+#addedManualOverlay.show {
+    display: flex;
+}
+
+#addedManualBox {
+    width: min(560px, 100%);
+    max-height: min(720px, 88vh);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 28px;
+    border: 1px solid rgba(255,255,255,.82);
+    border-radius: 24px;
+    background: rgba(255,255,255,.91);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    box-shadow: 0 24px 70px rgba(0,0,0,.20);
+    color: #202124;
+    position: relative;
+}
+
+#addedManualClose {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.06);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 34px;
+}
+
+#addedManualTitle {
+    margin: 0 42px 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+#addedManualIntro {
+    margin: 0 0 20px;
+    color: #6b7280;
+    line-height: 1.65;
+    font-size: 14px;
+}
+
+.added-manual-section {
+    padding: 14px 0;
+    border-top: 1px solid rgba(0,0,0,.07);
+}
+
+.added-manual-section h3 {
+    margin: 0 0 7px;
+    font-size: 16px;
+}
+
+.added-manual-section p {
+    margin: 0;
+    color: #5f6368;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+#addedManualOverlay[dir="rtl"] #addedManualTitle {
+    margin-left: 42px;
+    margin-right: 0;
+}
+
+#addedManualOverlay[dir="rtl"] #addedManualClose {
+    right: auto;
+    left: 16px;
+}
+
+@media (max-width: 600px) {
+    #addedManualTop {
+        top: 12px;
+        right: 12px;
+        padding: 0 11px;
+    }
+
+    #addedManualBox {
+        padding: 23px 20px;
+        border-radius: 20px;
+    }
+}
+</style>
+
+<script id="added-manual-script">
+(function () {
+    "use strict";
+
+    const manualText = {
+        "zh-CN": {
+            manual: "用户使用手册",
+            intro: "欢迎使用本网站。请按照下面的说明完成登录、注册和验证码验证。",
+            close: "关闭",
+            login: "登录",
+            register: "注册",
+            account: "账号方式",
+            accountText: "可以在邮箱和手机号之间切换。手机号需要选择正确的国家/地区区号。",
+            password: "密码要求",
+            passwordText: "密码必须正好16位，并同时包含字母和数字。",
+            code: "验证码",
+            codeText: "获取验证码前，请先填写正确的邮箱或手机号。验证码按钮会显示倒计时。",
+            captcha: "人机验证",
+            captchaText: "首次进入页面时需要完成6位数字验证码验证。",
+            passwordSwitch: "密码显示开关",
+            passwordSwitchText: "可以使用密码旁边的开关显示或隐藏密码。",
+            language: "语言",
+            languageText: "点击左上角语言按钮，可以在简体中文、繁体中文、English、Deutsch、Русский、Français、한국어、日本語、ไทย之间切换。"
+        },
+        "zh-TW": {
+            manual: "使用者使用手冊",
+            intro: "歡迎使用本網站。請依照以下說明完成登入、註冊與驗證碼驗證。",
+            close: "關閉",
+            login: "登入",
+            register: "註冊",
+            account: "帳號方式",
+            accountText: "可以在電子郵件和手機號碼之間切換。手機號碼需要選擇正確的國家/地區區號。",
+            password: "密碼要求",
+            passwordText: "密碼必須正好16位，並同時包含字母和數字。",
+            code: "驗證碼",
+            codeText: "取得驗證碼前，請先填寫正確的電子郵件或手機號碼。驗證碼按鈕會顯示倒數。",
+            captcha: "人機驗證",
+            captchaText: "首次進入頁面時需要完成6位隨機字母數字驗證碼。",
+            passwordSwitch: "密碼顯示開關",
+            passwordSwitchText: "可以使用密碼旁邊的開關顯示或隱藏密碼。",
+            language: "語言",
+            languageText: "點擊左上角語言按鈕，可以在繁體中文、簡體中文、English、Deutsch、Русский、Français之間切換。"
+        },
+        "en": {
+            manual: "User Guide",
+            intro: "Welcome. Follow the instructions below to sign in, create an account, and complete verification.",
+            close: "Close",
+            login: "Sign in",
+            register: "Create account",
+            account: "Account method",
+            accountText: "You can switch between email and phone. For phone numbers, select the correct country/region code.",
+            password: "Password requirements",
+            passwordText: "The password must be exactly 16 characters and contain both letters and numbers.",
+            code: "Verification code",
+            codeText: "Enter a valid email or phone number before requesting a verification code. The button shows a countdown.",
+            captcha: "Human verification",
+            captchaText: "When entering the website, complete the 6-character random alphanumeric verification.",
+            passwordSwitch: "Password switch",
+            passwordSwitchText: "Use the switch next to the password field to show or hide the password.",
+            language: "Language",
+            languageText: "Use the language button in the upper-left corner to switch between Simplified Chinese, Traditional Chinese, English, German, Russian, and French."
+        },
+        "de": {
+            manual: "Benutzerhandbuch",
+            intro: "Willkommen. Befolgen Sie die folgenden Hinweise für Anmeldung, Registrierung und Verifizierung.",
+            close: "Schließen",
+            login: "Anmelden",
+            register: "Registrieren",
+            account: "Anmeldeart",
+            accountText: "Sie können zwischen E-Mail und Telefonnummer wechseln. Bei Telefonnummern muss die richtige Länder-/Regionsvorwahl ausgewählt werden.",
+            password: "Passwortanforderungen",
+            passwordText: "Das Passwort muss genau 16 Zeichen lang sein und sowohl Buchstaben als auch Zahlen enthalten.",
+            code: "Bestätigungscode",
+            codeText: "Geben Sie vor dem Anfordern eines Codes eine gültige E-Mail-Adresse oder Telefonnummer ein. Die Schaltfläche zeigt einen Countdown.",
+            captcha: "Menschliche Überprüfung",
+            captchaText: "Beim Aufrufen der Website muss eine zufällige sechsstellige Buchstaben-Zahlen-Prüfung abgeschlossen werden.",
+            passwordSwitch: "Passwort-Schalter",
+            passwordSwitchText: "Mit dem Schalter neben dem Passwortfeld können Sie das Passwort ein- oder ausblenden.",
+            language: "Sprache",
+            languageText: "Über die Sprachschaltfläche oben links können Sie zwischen vereinfachtem Chinesisch, traditionellem Chinesisch, Englisch, Deutsch, Russisch und Französisch wechseln."
+        },
+        "ru": {
+            manual: "Руководство пользователя",
+            intro: "Добро пожаловать. Следуйте инструкции для входа, регистрации и подтверждения.",
+            close: "Закрыть",
+            login: "Войти",
+            register: "Регистрация",
+            account: "Способ входа",
+            accountText: "Можно переключаться между электронной почтой и телефоном. Для телефона выберите правильный код страны/региона.",
+            password: "Требования к паролю",
+            passwordText: "Пароль должен содержать ровно 16 символов, включая буквы и цифры.",
+            code: "Код подтверждения",
+            codeText: "Перед получением кода введите действительный адрес электронной почты или номер телефона. Кнопка показывает обратный отсчёт.",
+            captcha: "Проверка пользователя",
+            captchaText: "При входе на сайт необходимо пройти проверку из 6 случайных букв и цифр.",
+            passwordSwitch: "Переключатель пароля",
+            passwordSwitchText: "Используйте переключатель рядом с полем пароля, чтобы показать или скрыть пароль.",
+            language: "Язык",
+            languageText: "С помощью кнопки языка в левом верхнем углу можно переключаться между упрощённым китайским, традиционным китайским, английским, немецким, русским и французским."
+        },
+        "fr": {
+            manual: "Guide utilisateur",
+            intro: "Bienvenue. Suivez les instructions ci-dessous pour vous connecter, vous inscrire et effectuer la vérification.",
+            close: "Fermer",
+            login: "Connexion",
+            register: "Inscription",
+            account: "Méthode de compte",
+            accountText: "Vous pouvez choisir entre e-mail et téléphone. Pour le téléphone, sélectionnez le bon indicatif de pays/région.",
+            password: "Exigences du mot de passe",
+            passwordText: "Le mot de passe doit comporter exactement 16 caractères, avec des lettres et des chiffres.",
+            code: "Code de vérification",
+            codeText: "Saisissez un e-mail ou un numéro de téléphone valide avant de demander le code. Le bouton affiche un compte à rebours.",
+            captcha: "Vérification humaine",
+            captchaText: "À l'entrée sur le site, vous devez effectuer une vérification aléatoire de 6 caractères alphanumériques.",
+            passwordSwitch: "Interrupteur du mot de passe",
+            passwordSwitchText: "Utilisez l'interrupteur à côté du mot de passe pour l'afficher ou le masquer.",
+            language: "Langue",
+            languageText: "Utilisez le bouton de langue en haut à gauche pour passer entre chinois simplifié, chinois traditionnel, anglais, allemand, russe et français."
+        }
+    };
+
+    const languageNames = {
+        "zh-CN": "简体中文",
+        "zh-TW": "繁體中文",
+        "en": "English",
+        "de": "Deutsch",
+        "ru": "Русский",
+        "fr": "Français"
+    };
+
+    function getCurrentLang() {
+        const lang = localStorage.getItem("addedLanguage") || "zh-CN";
+        return manualText[lang] ? lang : "zh-CN";
+    }
+
+    function addManualUI() {
+        if (document.getElementById("addedManualOverlay")) return;
+
+        const topButton = document.createElement("button");
+        topButton.id = "addedManualTop";
+        topButton.type = "button";
+        topButton.textContent = "📖 用户使用手册";
+        topButton.addEventListener("click", openManual);
+
+        const bottomButton = document.createElement("button");
+        bottomButton.id = "addedManualBottom";
+        bottomButton.type = "button";
+        bottomButton.textContent = "📖 用户使用手册";
+        bottomButton.addEventListener("click", openManual);
+
+        /* 尽量不碰原 UI：只寻找原表单容器并在其后追加入口 */
+        const card = document.querySelector(".card") ||
+                     document.querySelector(".container") ||
+                     document.querySelector("main") ||
+                     document.body;
+
+        if (card && card !== document.body) {
+            card.appendChild(bottomButton);
+        } else {
+            document.body.appendChild(bottomButton);
+        }
+
+        document.body.appendChild(topButton);
+
+        const overlay = document.createElement("div");
+        overlay.id = "addedManualOverlay";
+
+        overlay.innerHTML = `
+            <div id="addedManualBox">
+                <button id="addedManualClose" type="button" aria-label="Close">×</button>
+                <h2 id="addedManualTitle"></h2>
+                <p id="addedManualIntro"></p>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualLogin"></h3>
+                    <p id="addedManualLoginText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualRegister"></h3>
+                    <p id="addedManualRegisterText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualPassword"></h3>
+                    <p id="addedManualPasswordText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualCode"></h3>
+                    <p id="addedManualCodeText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualCaptcha"></h3>
+                    <p id="addedManualCaptchaText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualPasswordSwitch"></h3>
+                    <p id="addedManualPasswordSwitchText"></p>
+                </div>
+
+                <div class="added-manual-section">
+                    <h3 id="addedManualLanguage"></h3>
+                    <p id="addedManualLanguageText"></p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        document.getElementById("addedManualClose").addEventListener("click", closeManual);
+
+        overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) closeManual();
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") closeManual();
+        });
+
+        updateManualLanguage();
+    }
+
+    function openManual() {
+        const overlay = document.getElementById("addedManualOverlay");
+        if (overlay) overlay.classList.add("show");
+    }
+
+    function closeManual() {
+        const overlay = document.getElementById("addedManualOverlay");
+        if (overlay) overlay.classList.remove("show");
+    }
+
+    function setManual(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    function updateManualLanguage() {
+        const lang = getCurrentLang();
+        const t = manualText[lang];
+
+        setManual("addedManualTop", "📖 " + t.manual);
+        setManual("addedManualBottom", "📖 " + t.manual);
+
+        setManual("addedManualTitle", t.manual);
+        setManual("addedManualIntro", t.intro);
+        setManual("addedManualLogin", t.login);
+        setManual("addedManualLoginText", t.accountText);
+        setManual("addedManualRegister", t.register);
+        setManual("addedManualRegisterText", t.accountText);
+        setManual("addedManualPassword", t.password);
+        setManual("addedManualPasswordText", t.passwordText);
+        setManual("addedManualCode", t.code);
+        setManual("addedManualCodeText", t.codeText);
+        setManual("addedManualCaptcha", t.captcha);
+        setManual("addedManualCaptchaText", t.captchaText);
+        setManual("addedManualPasswordSwitch", t.passwordSwitch);
+        setManual("addedManualPasswordSwitchText", t.passwordSwitchText);
+        setManual("addedManualLanguage", t.language);
+        setManual("addedManualLanguageText", t.languageText);
+
+        const overlay = document.getElementById("addedManualOverlay");
+        if (overlay) {
+            overlay.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+        }
+    }
+
+    /*
+     * 将原先的阿拉伯语菜单项改成德语。
+     * 不修改原语言切换函数，只在页面加载后替换可见菜单文字，
+     * 并把原来的 ar 翻译对象覆盖为德语。
+     */
+    function replaceArabicWithGerman() {
+        if (typeof languageData !== "undefined" && languageData["ar"]) {
+            languageData["de"] = {
+                ...languageData["ar"],
+                name: "Deutsch",
+                dir: "ltr",
+                titleLogin: "Anmelden",
+                titleRegister: "Registrieren",
+                subtitle: "Mit Ihrem Konto fortfahren",
+                login: "Anmelden",
+                register: "Registrieren",
+                email: "E-Mail",
+                phone: "Telefon",
+                password: "Passwort",
+                setPassword: "Passwort festlegen",
+                code: "Bestätigungscode",
+                getCode: "Code erhalten",
+                createAccount: "Konto erstellen",
+                terms: "Durch die Fortsetzung stimmen Sie den geltenden Nutzungsbedingungen und Datenschutzbestimmungen zu.",
+                phonePlaceholder: "Telefonnummer eingeben",
+                passwordPlaceholder: "16-stelliges Passwort eingeben",
+                registerPasswordPlaceholder: "16 Buchstaben + Zahlen",
+                codePlaceholder: "6-stelliger Code",
+                passwordHint: "Genau 16 Zeichen, einschließlich Buchstaben und Zahlen",
+                showPassword: "Passwort anzeigen",
+                hidePassword: "Passwort ausblenden",
+                captchaTitle: "Identität bestätigen",
+                captchaDesc: "Geben Sie zum Schutz Ihres Kontos den unten angezeigten Bestätigungscode ein",
+                captchaPlaceholder: "6-stelligen Code eingeben",
+                captchaRefresh: "Neuer Code",
+                captchaVerify: "Überprüfen"
+            };
+
+            /* 原数组里如果存在 ar，则换成 de */
+            if (Array.isArray(languages)) {
+                const i = languages.indexOf("ar");
+                if (i !== -1) languages[i] = "de";
+            }
+        }
+
+        /* 如果原语言菜单已经创建，则把阿拉伯语选项显示为德语 */
+        const menu = document.getElementById("addedLanguageMenu");
+        if (menu) {
+            const buttons = menu.querySelectorAll("button");
+            buttons.forEach(btn => {
+                if (btn.dataset.lang === "ar") {
+                    btn.dataset.lang = "de";
+                    btn.textContent = "Deutsch";
+                    btn.onclick = function () {
+                        changeAddedLanguage("de");
+                        menu.classList.remove("show");
+                    };
+                }
+            });
+        }
+
+        /* 旧的 ar 本地记录改成 de，避免刷新后继续显示阿拉伯语 */
+        if (localStorage.getItem("addedLanguage") === "ar") {
+            localStorage.setItem("addedLanguage", "de");
+        }
+
+        updateManualLanguage();
+    }
+
+    function initManualV2() {
+        addManualUI();
+        replaceArabicWithGerman();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initManualV2);
+    } else {
+        initManualV2();
+    }
+})();
+</script>
+
+
+<!-- =========================
+     追加修复 V4：
+     1. 修复阿拉伯语误显示：彻底移除 Arabic
+     2. 德语正常显示
+     3. 新增韩语、日语
+     4. 不修改原有 UI 结构，仅覆盖语言菜单与文字
+     ========================= -->
+<style id="added-language-fix-v4-style">
+#addedLanguageMenu button { text-align: left; }
+</style>
+<script id="added-language-fix-v4-script">
+(function () {
+    "use strict";
+
+    const L = {
+        "zh-CN": {name:"简体中文",dir:"ltr",login:"登录",register:"注册",email:"邮箱",phone:"手机号",password:"密码",setPassword:"设置密码",code:"验证码",getCode:"获取验证码",create:"创建账号",subtitle:"使用你的账号继续",terms:"继续使用即表示你同意相关服务条款和隐私政策",phonePh:"请输入手机号",loginPwPh:"请输入16位密码",regPwPh:"16位字母+数字",codePh:"6位验证码",pwHint:"必须正好16位，并且同时包含字母和数字",show:"显示密码",hide:"隐藏密码",captchaTitle:"验证你的身份",captchaDesc:"为了保护账号安全，请输入下方显示的验证码",captchaPh:"输入6位数字验证码",refresh:"换一个",verify:"验证"},
+        "zh-TW": {name:"繁體中文",dir:"ltr",login:"登入",register:"註冊",email:"電子郵件",phone:"手機號碼",password:"密碼",setPassword:"設定密碼",code:"驗證碼",getCode:"取得驗證碼",create:"建立帳號",subtitle:"使用你的帳號繼續",terms:"繼續使用即表示你同意相關服務條款和隱私權政策",phonePh:"請輸入手機號碼",loginPwPh:"請輸入16位密碼",regPwPh:"16位字母+數字",codePh:"6位驗證碼",pwHint:"必須正好16位，並且同時包含字母和數字",show:"顯示密碼",hide:"隱藏密碼",captchaTitle:"驗證你的身分",captchaDesc:"為了保護帳號安全，請輸入下方顯示的驗證碼",captchaPh:"輸入6位驗證碼",refresh:"換一個",verify:"驗證"},
+        "en": {name:"English",dir:"ltr",login:"Sign in",register:"Sign up",email:"Email",phone:"Phone",password:"Password",setPassword:"Set password",code:"Verification code",getCode:"Get code",create:"Create account",subtitle:"Continue with your account",terms:"By continuing, you agree to the applicable Terms of Service and Privacy Policy",phonePh:"Enter phone number",loginPwPh:"Enter 16-character password",regPwPh:"16 letters + numbers",codePh:"6-digit code",pwHint:"Must be exactly 16 characters and contain both letters and numbers",show:"Show password",hide:"Hide password",captchaTitle:"Verify your identity",captchaDesc:"To protect your account, enter the verification code shown below",captchaPh:"Enter 6-digit code",refresh:"Refresh",verify:"Verify"},
+        "de": {name:"Deutsch",dir:"ltr",login:"Anmelden",register:"Registrieren",email:"E-Mail",phone:"Telefon",password:"Passwort",setPassword:"Passwort festlegen",code:"Bestätigungscode",getCode:"Code erhalten",create:"Konto erstellen",subtitle:"Mit Ihrem Konto fortfahren",terms:"Durch die Fortsetzung stimmen Sie den geltenden Nutzungsbedingungen und Datenschutzbestimmungen zu.",phonePh:"Telefonnummer eingeben",loginPwPh:"16-stelliges Passwort eingeben",regPwPh:"16 Buchstaben + Zahlen",codePh:"6-stelliger Code",pwHint:"Genau 16 Zeichen, einschließlich Buchstaben und Zahlen",show:"Passwort anzeigen",hide:"Passwort ausblenden",captchaTitle:"Identität bestätigen",captchaDesc:"Geben Sie zum Schutz Ihres Kontos den unten angezeigten Bestätigungscode ein",captchaPh:"6-stelligen Code eingeben",refresh:"Neuer Code",verify:"Überprüfen"},
+        "ru": {name:"Русский",dir:"ltr",login:"Войти",register:"Регистрация",email:"Эл. почта",phone:"Телефон",password:"Пароль",setPassword:"Создать пароль",code:"Код подтверждения",getCode:"Получить код",create:"Создать аккаунт",subtitle:"Продолжите с помощью аккаунта",terms:"Продолжая, вы соглашаетесь с условиями обслуживания и политикой конфиденциальности",phonePh:"Введите номер телефона",loginPwPh:"Введите пароль из 16 символов",regPwPh:"16 букв + цифры",codePh:"6-значный код",pwHint:"Ровно 16 символов, включая буквы и цифры",show:"Показать пароль",hide:"Скрыть пароль",captchaTitle:"Подтвердите личность",captchaDesc:"Для защиты аккаунта введите код с изображения ниже",captchaPh:"Введите код из 6 символов",refresh:"Другой код",verify:"Проверить"},
+        "fr": {name:"Français",dir:"ltr",login:"Connexion",register:"Inscription",email:"E-mail",phone:"Téléphone",password:"Mot de passe",setPassword:"Créer un mot de passe",code:"Code de vérification",getCode:"Obtenir le code",create:"Créer un compte",subtitle:"Continuez avec votre compte",terms:"En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialité",phonePh:"Entrez votre numéro",loginPwPh:"Entrez un mot de passe de 16 caractères",regPwPh:"16 lettres + chiffres",codePh:"Code à 6 chiffres",pwHint:"Doit contenir exactement 16 caractères, avec des lettres et des chiffres",show:"Afficher le mot de passe",hide:"Masquer le mot de passe",captchaTitle:"Vérifiez votre identité",captchaDesc:"Pour protéger votre compte, saisissez le code affiché ci-dessous",captchaPh:"Entrez le code à 6 caractères",refresh:"Nouveau code",verify:"Vérifier"},
+        "th": {name:"ไทย",dir:"ltr",login:"เข้าสู่ระบบ",register:"สมัครสมาชิก",email:"อีเมล",phone:"หมายเลขโทรศัพท์",password:"รหัสผ่าน",setPassword:"ตั้งรหัสผ่าน",code:"รหัสยืนยัน",getCode:"รับรหัสยืนยัน",create:"สร้างบัญชี",subtitle:"ดำเนินการต่อด้วยบัญชีของคุณ",terms:"เมื่อดำเนินการต่อ คุณยอมรับข้อกำหนดการให้บริการและนโยบายความเป็นส่วนตัว",phonePh:"กรอกหมายเลขโทรศัพท์",loginPwPh:"กรอกรหัสผ่าน 16 ตัวอักษร",regPwPh:"ตัวอักษร 16 ตัว + ตัวเลข",codePh:"รหัสยืนยัน 6 หลัก",pwHint:"ต้องมี 16 ตัวอักษรพอดี และมีทั้งตัวอักษรและตัวเลข",show:"แสดงรหัสผ่าน",hide:"ซ่อนรหัสผ่าน",captchaTitle:"ยืนยันตัวตน",captchaDesc:"เพื่อความปลอดภัยของบัญชี กรุณากรอกรหัสยืนยันที่แสดงด้านล่าง",captchaPh:"กรอกรหัสยืนยัน 6 ตัวอักษร",refresh:"เปลี่ยนรหัส",verify:"ยืนยัน"},
+        "ko": {name:"한국어",dir:"ltr",login:"로그인",register:"회원가입",email:"이메일",phone:"휴대폰 번호",password:"비밀번호",setPassword:"비밀번호 설정",code:"인증 코드",getCode:"인증 코드 받기",create:"계정 만들기",subtitle:"계정으로 계속하기",terms:"계속하면 서비스 약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다.",phonePh:"휴대폰 번호를 입력하세요",loginPwPh:"16자리 비밀번호를 입력하세요",regPwPh:"16자리 영문자 + 숫자",codePh:"6자리 인증 코드",pwHint:"정확히 16자이며 영문자와 숫자를 모두 포함해야 합니다",show:"비밀번호 표시",hide:"비밀번호 숨기기",captchaTitle:"본인 확인",captchaDesc:"계정을 보호하기 위해 아래에 표시된 인증 코드를 입력하세요",captchaPh:"6자리 인증 코드를 입력하세요",refresh:"새로고침",verify:"확인"},
+        "ja": {name:"日本語",dir:"ltr",login:"ログイン",register:"新規登録",email:"メールアドレス",phone:"電話番号",password:"パスワード",setPassword:"パスワードを設定",code:"認証コード",getCode:"認証コードを取得",create:"アカウントを作成",subtitle:"アカウントで続行",terms:"続行すると、利用規約とプライバシーポリシーに同意したものとみなされます。",phonePh:"電話番号を入力してください",loginPwPh:"16文字のパスワードを入力してください",regPwPh:"16文字の英字 + 数字",codePh:"6桁の認証コード",pwHint:"16文字ちょうどで、英字と数字の両方を含めてください",show:"パスワードを表示",hide:"パスワードを非表示",captchaTitle:"本人確認",captchaDesc:"アカウントを保護するため、下に表示された認証コードを入力してください",captchaPh:"6桁の認証コードを入力してください",refresh:"別のコード",verify:"確認"}
+    };
+
+    const names = Object.keys(L);
+
+    function lang() {
+        const saved = localStorage.getItem("addedLanguage");
+        return L[saved] ? saved : "zh-CN";
+    }
+
+    function text(sel, value) { const e=document.querySelector(sel); if(e)e.textContent=value; }
+    function ph(sel, value) { const e=document.querySelector(sel); if(e)e.placeholder=value; }
+
+    function buildMenu() {
+        const menu=document.getElementById("addedLanguageMenu");
+        if(!menu) return;
+        menu.innerHTML="";
+        names.forEach(code=>{
+            const b=document.createElement("button");
+            b.type="button";
+            b.dataset.lang=code;
+            b.textContent=L[code].name;
+            b.addEventListener("click",()=>{
+                localStorage.setItem("addedLanguage",code);
+                apply(code);
+                menu.classList.remove("show");
+            });
+            menu.appendChild(b);
+        });
+    }
+
+    function apply(code) {
+        const t=L[code]||L["zh-CN"];
+        localStorage.setItem("addedLanguage",code);
+        document.documentElement.lang=code;
+        document.documentElement.dir=t.dir;
+
+        const registerActive=document.getElementById("registerForm")?.classList.contains("active");
+        text("#pageTitle",registerActive?t.register:t.login);
+        text(".subtitle",t.subtitle);
+        const sw=document.querySelectorAll(".switch-btn");
+        if(sw[0])sw[0].textContent=t.login; if(sw[1])sw[1].textContent=t.register;
+        text("#loginEmailBtn",t.email); text("#loginPhoneBtn",t.phone);
+        text("#registerEmailBtn",t.email); text("#registerPhoneBtn",t.phone);
+
+        document.querySelectorAll(".form label").forEach(e=>{
+            const s=e.textContent.trim();
+            if(["邮箱","電子郵件","E-mail","Эл. почта","البريد الإلكتروني","E-Mail","이메일","メールアドレス"].includes(s))e.textContent=t.email;
+            else if(["手机号","手機號碼","Phone","Телефон","رقم الهاتف","Telefon","Téléphone","휴대폰 번호","電話番号"].includes(s))e.textContent=t.phone;
+            else if(["密码","Password","Пароль","كلمة المرور","Passwort","Mot de passe","비밀번호","パスワード"].includes(s))e.textContent=t.password;
+            else if(["设置密码","設定密碼","Set password","Создать пароль","تعيين كلمة المرور","Passwort festlegen","Créer un mot de passe","비밀번호 설정","パスワードを設定"].includes(s))e.textContent=t.setPassword;
+            else if(["验证码","驗證碼","Verification code","Код подтверждения","رمز التحقق","Bestätigungscode","Code de vérification","인증 코드","認証コード"].includes(s))e.textContent=t.code;
+        });
+        document.querySelectorAll(".code-btn").forEach(b=>{if(!b.disabled)b.textContent=t.getCode;});
+        const submit=document.querySelectorAll(".submit-btn"); if(submit[0])submit[0].textContent=t.login; if(submit[1])submit[1].textContent=t.create;
+        ph("#loginPhone",t.phonePh); ph("#registerPhone",t.phonePh); ph("#loginPassword",t.loginPwPh); ph("#registerPassword",t.regPwPh); ph("#loginCode",t.codePh); ph("#registerCode",t.codePh); ph("#captchaInput",t.captchaPh);
+        document.querySelectorAll(".password-hint").forEach(e=>e.textContent=t.pwHint);
+        text(".footer",t.terms);
+        text(".captcha-box h2",t.captchaTitle); text(".captcha-box p",t.captchaDesc);
+        const cb=document.querySelectorAll(".captcha-actions button"); if(cb[0])cb[0].textContent=t.refresh; if(cb[1])cb[1].textContent=t.verify;
+        document.querySelectorAll(".added-password-label").forEach(e=>{const i=document.getElementById(e.dataset.for); e.textContent=i&&i.type==="text"?t.hide:t.show;});
+        updateManual(code);
+    }
+
+    const manual={
+      "zh-CN":["用户使用手册","欢迎使用本网站。请按照下面的说明完成登录、注册和验证码验证。","登录","注册","账号方式","可以在邮箱和手机号之间切换。手机号需要选择正确的国家/地区区号。","密码要求","密码必须正好16位，并同时包含字母和数字。","验证码","获取验证码前，请先填写正确的邮箱或手机号。验证码按钮会显示倒计时。","人机验证","首次进入页面时需要完成6位数字验证码验证。","密码显示开关","可以使用密码旁边的开关显示或隐藏密码。","语言","点击左上角语言按钮，可以切换语言。"],
+      "zh-TW":["使用者使用手冊","歡迎使用本網站。請依照以下說明完成登入、註冊與驗證碼驗證。","登入","註冊","帳號方式","可以在電子郵件和手機號碼之間切換。","密碼要求","密碼必須正好16位，並同時包含字母和數字。","驗證碼","取得驗證碼前，請先填寫正確的電子郵件或手機號碼。","人機驗證","首次進入頁面時需要完成6位隨機字母數字驗證碼。","密碼顯示開關","可以使用密碼旁邊的開關顯示或隱藏密碼。","語言","點擊左上角語言按鈕，可以切換語言。"],
+      "en":["User Guide","Follow the instructions below to sign in, register, and complete verification.","Sign in","Create account","Account method","Switch between email and phone and select the correct country/region code for phone numbers.","Password requirements","The password must be exactly 16 characters and contain letters and numbers.","Verification code","Enter a valid email or phone number before requesting a code.","Human verification","Complete the 6-digit verification when entering the website.","Password switch","Use the switch beside the password to show or hide it.","Language","Use the upper-left language button to change languages."],
+      "de":["Benutzerhandbuch","Befolgen Sie die Hinweise für Anmeldung, Registrierung und Verifizierung.","Anmelden","Registrieren","Anmeldeart","Wechseln Sie zwischen E-Mail und Telefon und wählen Sie die richtige Länder-/Regionsvorwahl.","Passwortanforderungen","Das Passwort muss genau 16 Zeichen lang sein und Buchstaben sowie Zahlen enthalten.","Bestätigungscode","Geben Sie vor dem Anfordern eines Codes eine gültige E-Mail-Adresse oder Telefonnummer ein.","Menschliche Überprüfung","Beim Aufrufen der Website muss die zufällige 6-stellige Prüfung abgeschlossen werden.","Passwort-Schalter","Mit dem Schalter neben dem Passwort können Sie es anzeigen oder ausblenden.","Sprache","Über die Schaltfläche oben links können Sie die Sprache ändern."],
+      "ru":["Руководство пользователя","Следуйте инструкции для входа, регистрации и подтверждения.","Войти","Регистрация","Способ входа","Переключайтесь между электронной почтой и телефоном и выбирайте код страны.","Требования к паролю","Пароль должен содержать ровно 16 символов, включая буквы и цифры.","Код подтверждения","Перед получением кода введите действительную почту или номер телефона.","Проверка пользователя","При входе необходимо пройти случайную проверку из 6 символов.","Переключатель пароля","Используйте переключатель рядом с паролем, чтобы показать или скрыть его.","Язык","Используйте кнопку языка в левом верхнем углу."],
+      "fr":["Guide utilisateur","Suivez les instructions pour vous connecter, vous inscrire et effectuer la vérification.","Connexion","Inscription","Méthode de compte","Choisissez entre e-mail et téléphone et sélectionnez le bon indicatif.","Exigences du mot de passe","Le mot de passe doit comporter exactement 16 caractères, avec lettres et chiffres.","Code de vérification","Saisissez un e-mail ou un numéro de téléphone valide avant de demander un code.","Vérification humaine","Effectuez la vérification aléatoire de 6 caractères à l'entrée du site.","Interrupteur du mot de passe","Utilisez l'interrupteur pour afficher ou masquer le mot de passe.","Langue","Utilisez le bouton en haut à gauche pour changer de langue."],
+      "th":["คู่มือผู้ใช้","โปรดทำตามคำแนะนำด้านล่างเพื่อเข้าสู่ระบบ สมัครสมาชิก และยืนยันตัวตน","เข้าสู่ระบบ","สมัครสมาชิก","วิธีใช้บัญชี","สลับระหว่างอีเมลและหมายเลขโทรศัพท์ และเลือกหมายเลขประเทศ/ภูมิภาคที่ถูกต้องสำหรับโทรศัพท์","ข้อกำหนดรหัสผ่าน","รหัสผ่านต้องมี 16 ตัวอักษรพอดี และต้องมีทั้งตัวอักษรและตัวเลข","รหัสยืนยัน","กรอกอีเมลหรือหมายเลขโทรศัพท์ที่ถูกต้องก่อนขอรหัสยืนยัน","การยืนยันตัวตน","เมื่อเข้าสู่เว็บไซต์ ให้ทำการยืนยันด้วยรหัสสุ่ม 6 ตัวอักษรและตัวเลข","สวิตช์แสดงรหัสผ่าน","ใช้สวิตช์ข้างช่องรหัสผ่านเพื่อแสดงหรือซ่อนรหัสผ่าน","ภาษา","ใช้ปุ่มภาษาด้านซ้ายบนเพื่อเปลี่ยนภาษา"],
+      "ko":["사용자 안내서","로그인, 회원가입 및 인증 방법을 안내합니다.","로그인","회원가입","계정 방식","이메일과 휴대폰을 전환하고 휴대폰 사용 시 올바른 국가/지역 번호를 선택하세요.","비밀번호 요구 사항","비밀번호는 정확히 16자이며 영문자와 숫자를 모두 포함해야 합니다.","인증 코드","인증 코드를 받기 전에 올바른 이메일 또는 휴대폰 번호를 입력하세요.","본인 확인","사이트에 들어올 때 6자리 무작위 문자·숫자 인증을 완료하세요.","비밀번호 표시 전환","비밀번호 옆의 스위치로 비밀번호를 표시하거나 숨길 수 있습니다.","언어","왼쪽 위 언어 버튼에서 언어를 변경할 수 있습니다."],
+      "ja":["ユーザーガイド","ログイン、登録、認証の手順をご案内します。","ログイン","新規登録","アカウント方式","メールアドレスと電話番号を切り替え、電話番号では正しい国・地域番号を選択してください。","パスワード要件","パスワードは16文字ちょうどで、英字と数字の両方を含めてください。","認証コード","認証コードを取得する前に、正しいメールアドレスまたは電話番号を入力してください。","本人確認","サイトに入る際、6文字のランダムな英数字認証を完了してください。","パスワード表示スイッチ","パスワード横のスイッチで表示・非表示を切り替えられます。","言語","左上の言語ボタンから言語を変更できます。"]
+    };
+
+    function updateManual(code){
+        const m=manual[code]||manual["zh-CN"];
+        const ids=["addedManualTitle","addedManualIntro","addedManualLogin","addedManualLoginText","addedManualRegister","addedManualRegisterText","addedManualPassword","addedManualPasswordText","addedManualCode","addedManualCodeText","addedManualCaptcha","addedManualCaptchaText","addedManualPasswordSwitch","addedManualPasswordSwitchText","addedManualLanguage","addedManualLanguageText"];
+        ids.forEach((id,i)=>{const e=document.getElementById(id);if(e)e.textContent=m[i];});
+        const top=document.getElementById("addedManualTop"),bottom=document.getElementById("addedManualBottom");
+        if(top)top.textContent="📖 "+m[0]; if(bottom)bottom.textContent="📖 "+m[0];
+    }
+
+    function init(){
+        buildMenu();
+        const saved=localStorage.getItem("addedLanguage");
+        const code=saved==="ar"?"de":(L[saved]?saved:"zh-CN");
+        if(saved==="ar") localStorage.setItem("addedLanguage","de");
+        apply(code);
+    }
+
+    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+
+
+
+<!-- =====================================================
+     新增：人机验证期间显示“制作不易，捐款支持”弹窗
+     规则：
+     1. 人机验证可见时首次显示弹窗。
+     2. 弹窗可以通过“×”“关闭”或 Esc 关闭。
+     3. 关闭后，只要人机验证没有重新出现，弹窗不会自己再次打开。
+     4. 人机验证通过后，弹窗自动关闭。
+     5. 验证码通过不会触发登录或跳转；登录仍需用户手动点击。
+     ===================================================== -->
+<style id="login-success-popup-style">
+#loginSuccessOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .42);
+    padding: 20px;
+}
+#loginSuccessOverlay.show { display: flex; }
+#loginSuccessBox {
+    width: min(360px, 100%);
+    box-sizing: border-box;
+    padding: 28px 24px 22px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 50px rgba(0,0,0,.20);
+    text-align: center;
+    position: relative;
+}
+#loginSuccessTitle {
+    margin: 0 0 10px;
+    font-size: 21px;
+    font-weight: 700;
+    color: #202124;
+}
+#loginSuccessText {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #5f6368;
+}
+#loginSuccessClose {
+    width: 100%;
+    height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: #1a73e8;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+#loginSuccessClose:hover { background: #1557b0; }
+</style>
+
+<script id="login-success-popup-script">
+(function () {
+    "use strict";
+
+    function showLoginSuccessPopup() {
+        let overlay = document.getElementById("loginSuccessOverlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "loginSuccessOverlay";
+            overlay.setAttribute("role", "dialog");
+            overlay.setAttribute("aria-modal", "true");
+
+            const box = document.createElement("div");
+            box.id = "loginSuccessBox";
+
+            const title = document.createElement("div");
+            title.id = "loginSuccessTitle";
+            title.textContent = "登录成功";
+
+            const message = document.createElement("div");
+            message.id = "loginSuccessText";
+            message.textContent = "登录验证已通过。";
+
+            const close = document.createElement("button");
+            close.id = "loginSuccessClose";
+            close.type = "button";
+            close.textContent = "确定";
+            close.addEventListener("click", function () {
+                overlay.classList.remove("show");
+            });
+
+            box.appendChild(title);
+            box.appendChild(message);
+            box.appendChild(close);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+        }
+
+        overlay.classList.add("show");
+    }
+
+    window.showLoginSuccessPopup = showLoginSuccessPopup;
+})();
+</script>
+
+<style id="captcha-donation-popup-style">
+#addedInvestmentOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: none;
+}
+
+#addedInvestmentOverlay.show {
+    display: flex;
+}
+
+#addedInvestmentBox {
+    width: min(390px, 92vw);
+    max-height: 88vh;
+    overflow: auto;
+    padding: 24px 22px 22px;
+    border: 1px solid rgba(255,255,255,.78);
+    border-radius: 24px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 22px 70px rgba(0,0,0,.22);
+    text-align: center;
+    position: relative;
+    pointer-events: auto;
+}
+
+#addedInvestmentTitle {
+    margin: 2px 34px 8px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #202124;
+}
+
+#addedInvestmentText {
+    margin: 0 0 16px;
+    color: #5f6368;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+#addedInvestmentQr {
+    display: block;
+    width: min(280px, 78vw);
+    height: auto;
+    max-height: 48vh;
+    object-fit: contain;
+    margin: 8px auto 18px;
+    border-radius: 14px;
+    background: #fff;
+}
+
+#addedInvestmentX {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.06);
+    color: #5f6368;
+    font-size: 20px;
+    line-height: 34px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+#addedInvestmentClose {
+    width: 100%;
+    height: 46px;
+    border: 0;
+    border-radius: 13px;
+    background: #1a73e8;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+#addedInvestmentX:hover {
+    background: rgba(0,0,0,.10);
+}
+
+#addedInvestmentClose:hover {
+    background: #1557b0;
+}
+</style>
+
+<script id="captcha-donation-popup-script">
+(function () {
+    "use strict";
+
+    const qrImageFile = "mm_facetoface_collect_qrcode_1790330524146.png";
+    let lastCaptchaVisible = null;
+
+    function createInvestmentPopup() {
+        if (document.getElementById("addedInvestmentOverlay")) return;
+
+        const overlay = document.createElement("div");
+        overlay.id = "addedInvestmentOverlay";
+
+        const box = document.createElement("div");
+        box.id = "addedInvestmentBox";
+        box.setAttribute("role", "dialog");
+        box.setAttribute("aria-label", "制作不易，捐款支持");
+
+        const x = document.createElement("button");
+        x.id = "addedInvestmentX";
+        x.type = "button";
+        x.textContent = "×";
+        x.setAttribute("aria-label", "关闭捐款支持弹窗");
+
+        const title = document.createElement("div");
+        title.id = "addedInvestmentTitle";
+        title.textContent = "制作不易，捐款支持";
+
+        const text = document.createElement("div");
+        text.id = "addedInvestmentText";
+        text.textContent = "感谢你的支持。如果愿意，可以通过下方二维码支持本项目。";
+
+        const img = document.createElement("img");
+        img.id = "addedInvestmentQr";
+        img.src = qrImageFile;
+        img.alt = "捐款二维码";
+        img.onerror = function () {
+            this.style.display = "none";
+            text.textContent = "二维码图片未找到，请将 " + qrImageFile + " 放在网页同一目录后刷新页面。";
+        };
+
+        const close = document.createElement("button");
+        close.id = "addedInvestmentClose";
+        close.type = "button";
+        close.textContent = "关闭";
+
+        x.addEventListener("click", function () {
+            closeInvestmentPopup();
+        });
+
+        close.addEventListener("click", function () {
+            closeInvestmentPopup();
+        });
+
+        box.appendChild(x);
+        box.appendChild(title);
+        box.appendChild(text);
+        box.appendChild(img);
+        box.appendChild(close);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    }
+
+    function openInvestmentPopup() {
+        createInvestmentPopup();
+        const overlay = document.getElementById("addedInvestmentOverlay");
+        if (overlay) overlay.classList.add("show");
+    }
+
+    function closeInvestmentPopup() {
+        const overlay = document.getElementById("addedInvestmentOverlay");
+        if (overlay) overlay.classList.remove("show");
+    }
+
+    function getCaptchaVisible() {
+        const captcha = document.getElementById("captchaOverlay");
+        return !!captcha && !captcha.classList.contains("hidden");
+    }
+
+    function syncWithCaptcha(force) {
+        const visible = getCaptchaVisible();
+
+        if (lastCaptchaVisible === null) {
+            lastCaptchaVisible = visible;
+            if (visible) {
+                    openInvestmentPopup();
+            } else {
+                closeInvestmentPopup();
+            }
+            return;
+        }
+
+        if (visible === lastCaptchaVisible && !force) {
+            return;
+        }
+
+        lastCaptchaVisible = visible;
+
+        if (visible) {
+            openInvestmentPopup();
+        } else {
+            closeInvestmentPopup();
+        }
+    }
+
+    function init() {
+        createInvestmentPopup();
+
+        const captcha = document.getElementById("captchaOverlay");
+        if (!captcha) return;
+
+        syncWithCaptcha(false);
+
+        new MutationObserver(function () {
+            const visible = getCaptchaVisible();
+            if (visible !== lastCaptchaVisible) {
+                syncWithCaptcha(false);
+            }
+        }).observe(captcha, {
+            attributes: true,
+            attributeFilter: ["class"]
+        });
+
+        window.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && getCaptchaVisible()) {
+                closeInvestmentPopup();
+            }
+        });
+
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
+})();
+</script>
+
+</body>
+</html>
